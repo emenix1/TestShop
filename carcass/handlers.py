@@ -109,4 +109,4 @@ def item_buy(id):
 
 @app.errorhandler(404)
 def page_not_found(error):
-    return render_template("page404.html", title='Страница не найдено'), 404
+    return render_template("error404.html", title='Страница не найдено'), 404
