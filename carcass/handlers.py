@@ -1,6 +1,6 @@
 from cloudipsp import Api, Checkout
 from flask import request, render_template, redirect, flash, session, abort
-from flask_login import login_user
+from flask_login import login_user, logout_user, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from carcass import app, db
@@ -10,8 +10,7 @@ from carcass.config import Item, User
 @app.route("/")
 def index():
     items = Item.query.order_by(Item.price).all()
-    return render_template("index.html",
-                           data=items)
+    return render_template("index.html", data=items)
 
 
 @app.route("/about")
@@ -22,6 +21,7 @@ def about():
 
 
 @app.route("/create", methods=['POST', 'GET'])
+@login_required
 def create():
     if request.method == 'POST':
         item = Item(
@@ -59,6 +59,12 @@ def process_login():
             flash('Ошибка авторизации')
     return render_template('login.html')
 
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect('/')
 
 @app.route('/register', methods=['GET', 'POST'])
 def process_register():
