@@ -52,7 +52,7 @@ def process_login():
 
                 next_page = request.args.get('next')
 
-                return redirect(next_page)
+                return redirect("/")
             else:
                 flash('Ошибка в логине или пароле')
         else:
@@ -81,8 +81,7 @@ def process_register():
             except:
                 flash('Ошибка регистрации пользователя')
                 redirect('/register')
-    else:
-        return render_template("register.html")
+    return render_template("register.html")
 
 
 @app.route('/profile/<login>')
