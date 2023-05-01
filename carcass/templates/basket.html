@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+
+{% block title %}
+<title>Онлайн магазин</title>
+{% endblock %}
+{% block body%}
+    <div class="pricing-header p-3 pb-md-4 mx-auto text-center">
+      <h1 class="display-4 fw-normal">Корзина</h1>
+      <p class="fs-5 text-body-secondary">что-то ещё</p>
+    </div>
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+    <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
+        {% if data %}
+        <table class="table">
+              <thead>
+                  <tr>
+                      <th class="th">Имя товара</th>
+                      <th> Цена товара</th>
+                  </tr>
+              </thead>
+            {% for title, price in data %}
+              <tbody>
+              <tr>
+                  <td>{{ title }}</td>
+                  <td>{{ price }} $ </td>
+              </tr>
+            </tbody>
+            {% endfor %}
+          </table>
+        <a href="/baskbuy" class="w-100 btn btn-lg btn-outline-primary">Купить</a>
+        {% else %}
+            <p class="container">Корзина пусто<br><a href="/">Добавить товар</a></p>
+        {% endif %}
+    </div>
+{% endblock %}

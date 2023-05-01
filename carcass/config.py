@@ -4,19 +4,20 @@ from carcass import db, login_manager
 
 
 class Item(db.Model):
+    __tablename__ = 'item'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String, unique=True, nullable=False)
     price = db.Column(db.Integer, nullable=False)
-    isActive = db.Column(db.Boolean, default=True)
+    quantity = db.Column(db.Integer, nullable=False)
 
     def __repr__(self):
-        return self.title
+        return str(self.title, self.price)
 
 
 class User(db.Model, UserMixin):
-    __tablename__ = 'users'
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
-    login = db.Column(db.String(250), nullable=False)
+    login = db.Column(db.String(250), nullable=False, unique=True)
     password = db.Column(db.String(250), nullable=False)
 
 

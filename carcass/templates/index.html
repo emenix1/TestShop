@@ -9,6 +9,15 @@
       <h1 class="display-4 fw-normal">Список товаров</h1>
       <p class="fs-5 text-body-secondary">ТЕСТ</p>
     </div>
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
     <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
         {% for el in data %}
         <div class="col">
@@ -20,11 +29,10 @@
               <h1 class="card-title pricing-card-title">{{ el.price }}<small class="text-body-secondary fw-light"> $</small></h1>
               <ul class="list-unstyled mt-3 mb-4">
                 <li>ID товара: {{ el.id }}</li>
-                <li>2 GB of storage</li>
-                <li>Email support</li>
-                <li>Help center access</li>
+                <li> Статус: {{ 'Есть в наличие' if el.quantity>0 else 'Отсутствует' }}</li>
               </ul>
             <a href="/buy/{{ el.id }}" class="w-100 btn btn-lg btn-outline-primary">Купить</a>
+              <a href="/basket/{{ el.title }}/{{ el.price }}" class="w-100 btn btn-lg btn-outline-primary">Добавить в корзину</a>
             </div>
           </div>
         </div>
