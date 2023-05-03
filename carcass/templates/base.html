@@ -16,8 +16,7 @@
       </a>
 
       <nav class="d-inline-flex mt-2 mt-md-0 ms-md-auto">
-        <a class="me-3 py-2 link-body-emphasis text-decoration-none" href="/login">Вход</a>
-        <a class="me-3 py-2 link-body-emphasis text-decoration-none" href="/register">Регистрация</a>
+        <a class="me-3 py-2 link-body-emphasis text-decoration-none" href="/login">Авторизация</a>
         <a class="me-3 py-2 link-body-emphasis text-decoration-none" href="/about">О нас</a>
         <a class="me-3 py-2 link-body-emphasis text-decoration-none" href="/basket">Корзина</a>
       </nav>
@@ -25,9 +24,18 @@
     </div>
   </header>
 
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+
   {% block body %}
-
-
   <footer class="pt-4 my-md-5 pt-md-5 border-top">
     <div class="row">
       <div class="col-12 col-md">

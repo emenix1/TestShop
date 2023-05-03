@@ -9,15 +9,6 @@
       <h1 class="display-4 fw-normal">Корзина</h1>
       <p class="fs-5 text-body-secondary">что-то ещё</p>
     </div>
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <ul class=flashes>
-    {% for message in messages %}
-      <li>{{ message }}</li>
-    {% endfor %}
-    </ul>
-  {% endif %}
-{% endwith %}
     <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
         {% if data %}
         <table class="table">
@@ -32,6 +23,7 @@
               <tr>
                   <td>{{ title }}</td>
                   <td>{{ price }} $ </td>
+                  <td><a href="/delgds/{{ title }}" class="w-100">Удалить</a> </td>
               </tr>
             </tbody>
             {% endfor %}

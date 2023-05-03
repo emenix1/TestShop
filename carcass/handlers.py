@@ -1,10 +1,11 @@
 from cloudipsp import Api, Checkout
 from flask import request, render_template, redirect, flash, session, abort
-from flask_login import login_user, logout_user, login_required
+from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from carcass import app, db
 from carcass.config import Item, User
+from carcass.forms import LoginForm, RegisterForm
 
 
 @app.route("/")
@@ -16,7 +17,7 @@ def index():
 
 @app.route("/about")
 def about():
-    users = User.query.order_by(User.login).all()
+    users = User.query.order_by(User.username).all()
     return render_template("about.html",
                            data=users)
 
@@ -40,26 +41,25 @@ def create():
             return redirect("/create")
 
     else:
-        return render_template("create.html")
+        return render_template("create_gds.html")
 
 
 @app.route("/login", methods=['GET', 'POST'])
 def process_login():
-    if request.method == 'POST':
-        login = request.form["login"]
-        password = request.form["password"]
-        if login and password:
-            user = User.query.filter_by(login=login).first()
-            if check_password_hash(user.password, password):
-                login_user(user)
-                next_page = request.args.get('next')
-
-                return redirect('/')
-            else:
-                flash('Ошибка в логине или пароле')
+    if current_user.is_authenticated:
+        return redirect('/')
+    form = LoginForm()
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.psw.data
+        user = User.query.filter_by(email=email).first()
+        if user and check_password_hash(user.password, password):
+            rm = form.remember.data
+            login_user(user, remember=rm)
+            return redirect(request.args.get('next') or '/')
         else:
-            flash('Ошибка авторизации')
-    return render_template('login.html')
+            flash('Ошибка в логине или пароле')
+    return render_template('login.html', form=form)
 
 
 @app.route("/logout")
@@ -71,28 +71,23 @@ def logout():
 
 @app.route('/register', methods=['GET', 'POST'])
 def process_register():
-    login = request.form.get('login')
-    password = request.form.get('password')
-    password2 = request.form.get('password2')
-    if request.method == 'POST':
-        if not (login or password or password2):
-            flash('Пожалуйста, заполните все поля!')
-        elif password != password2:
-            flash('Пароли не совпадают!')
-        else:
-            hash_pwd = generate_password_hash(password)
-            new_user = User(login=login, password=hash_pwd)
-            print(new_user.login, new_user.id, sep='\n')
-            try:
-                db.session.add(new_user)
-                db.session.commit()
-                return redirect('/login')
-            except:
-                db.session.rollback()
-                flash('Ошибка регистрации пользователя.\n'
+    form = RegisterForm()
+    if form.validate_on_submit():
+        name = form.name.data
+        password = form.psw.data
+        email = form.email.data
+        hash_psw = generate_password_hash(password)
+        new_user = User(username=name, email=email, password=hash_psw)
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            return redirect('/login')
+        except:
+            db.session.rollback()
+            flash('Ошибка регистрации пользователя.\n'
                       'Попробуйте ввести другой логин')
-                redirect('/register')
-    return render_template("register.html")
+            redirect('/register')
+    return render_template("register.html", form=form)
 
 
 @app.route('/profile/<login>')
@@ -146,16 +141,36 @@ def show_basket():
     return render_template('basket.html', data=data)
 
 
-@app.route('/basket/<title>/<int:price>', methods=['GET'])
+@app.route('/basket/<title>', methods=['GET'])
 @login_required
-def add_to_basket(title, price):
-    basket = session.setdefault('basket', [])
-    basket.append((title, price))
-    if not session.modified:
-        session.modified = True
-        flash('Товар успешно добавлен в корзину')
+def add_to_basket(title):
+    item = Item.query.filter_by(title=title).first()
+    if item.quantity < 0:
+        flash('К сожалению, данный товар временно отсутствует')
+    else:
+        basket = session.setdefault('basket', [])
+        basket.append((item.title, item.price))
+
+        if not session.modified:
+            session.modified = True
+            flash('Товар успешно добавлен в корзину')
     return redirect('/')
 
+
+@app.route('/delgds/<title>')
+@login_required
+def delete_from_basket(title):
+    if session['basket']:
+        for i in session['basket']:
+            if i[0] == title:
+                session['basket'].remove(i)
+                session.modified = True
+                flash('Товар удален с корзины')
+                return redirect('/basket')
+    else:
+        flash('В корзине нет товаров')
+        return redirect('/')
+    return redirect('/')
 
 @app.route
 @app.errorhandler(404)

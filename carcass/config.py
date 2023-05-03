@@ -17,8 +17,10 @@ class Item(db.Model):
 class User(db.Model, UserMixin):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
-    login = db.Column(db.String(250), nullable=False, unique=True)
-    password = db.Column(db.String(250), nullable=False)
+    username = db.Column(db.String(16), nullable=False)
+    email = db.Column(db.String(32), nullable=False, unique=True)
+    password = db.Column(db.String(32), nullable=False)
+    #avatar = db.Column(db.BLOB, default=False)
 
 
 @login_manager.user_loader
