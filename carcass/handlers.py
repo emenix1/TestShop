@@ -73,11 +73,8 @@ def logout():
 def process_register():
     form = RegisterForm()
     if form.validate_on_submit():
-        name = form.name.data
-        password = form.psw.data
-        email = form.email.data
-        hash_psw = generate_password_hash(password)
-        new_user = User(username=name, email=email, password=hash_psw)
+        hash_psw = generate_password_hash(form.psw.data)
+        new_user = User(username=form.name.data, email=form.email.data, password=hash_psw)
         try:
             db.session.add(new_user)
             db.session.commit()
