@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, EmailField, PasswordField, BooleanField, SubmitField
+from wtforms import StringField, EmailField, PasswordField, BooleanField, SubmitField, IntegerField
 from wtforms.validators import DataRequired, Email, Length, EqualTo
 
 
@@ -19,3 +19,10 @@ class RegisterForm(FlaskForm):
     psw2 = PasswordField('Повтор пароля', validators=[DataRequired(), EqualTo('psw',
                                                                               message='Пароли не совпадают')])
     submit = SubmitField('Регистрация')
+
+
+class AddGDSForm(FlaskForm):
+    title = StringField('Название товара', validators=[DataRequired(), Length(max=32)])
+    price = IntegerField('Цена  $', validators=[DataRequired('Укажите цену товара')])
+    qty = IntegerField('Количество товара', validators=[DataRequired()])
+    submit = SubmitField('Добавить')
