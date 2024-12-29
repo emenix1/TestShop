@@ -1,52 +1,50 @@
 {% extends "base.html" %}
 
-
 {% block title %}
 <title>Онлайн магазин</title>
 {% endblock %}
 
-{% block body%}
-{% if flag %}
-<a href="/cat_update/{{ cat.id }}" class="btn btn-primary">Изменить</a>
-{% else %}
- false
-{% endif %}
-<div class="dropdown">
-  <div class="btn btn-secondary dropdown-toggle" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-    Категории
-  </div>
-
-
-  <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-       <li><a class="dropdown-item" href="/">Все товары</a></li>
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div class="dropdown">
+    <button class="btn btn-secondary dropdown-toggle" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+      Категории
+    </button>
+    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+      <li><a class="dropdown-item" href="/">Все товары</a></li>
       {% for cat in categories %}
-          <li><a class="dropdown-item" href="/category/{{ cat.id }}">{{cat.name}}</a></li>
+        <li><a class="dropdown-item" href="/category/{{ cat.id }}">{{ cat.name }}</a></li>
       {% endfor %}
-
-  </ul>
+    </ul>
+  </div>
+  {% if flag %}
+  <a href="/admin" class="btn btn-primary">Опции</a>
+  {% endif %}
 </div>
-    <div class="text-center">
-      <h6>Список товаров</h6>
-    </div>
 
-    <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
-        {% for el in data %}
-        <div class="col">
-          <div class="card mb-4 rounded-3 shadow-sm">
-            <div class="card-header py-3">
-              <h4 class="my-0 fw-normal">{{ el.title }}</h4>
-            </div>
-            <div class="card-body">
+<div class="text-center">
+  <h4>Список товаров</h4>
+</div>
+<br>
+<div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
+  {% for el in data %}
+  <div class="col">
+    <div class="card mb-4 rounded-3 shadow-sm">
+      <div class="card-header py-3">
+        <h4 class="my-0 fw-normal">{{ el.title }}</h4>
+      </div>
+      <div class="card-body">
               <h1 class="card-title pricing-card-title">{{ el.price }}<small class="text-body-secondary fw-light"> $</small></h1>
               <ul class="list-unstyled mt-3 mb-4">
-                <li>ID товара: {{ el.id }}</li>
-
+                <li>{{ el.description }}</li>
               </ul>
-            <a href="/buy/{{ el.id }}" class="w-100 btn btn-lg btn-outline-primary">Купить</a>
-              <a href="/basket/{{ el.title }}" class="w-100 btn btn-lg btn-outline-primary">Добавить в корзину</a>
+                  <div class="btn-group-lg d-flex">
+                        <a class="btn btn-success flex-fill mx-1" href="/buy/{{ el.id }}">Купить</a>
+                        <a class="btn btn-warning flex-fill mx-1" href="/basket/{{ el.title }}">В корзину</a>
+              </div>
             </div>
           </div>
         </div>
-        {% endfor %}
-    </div>
+  {% endfor %}
+</div>
 {% endblock %}

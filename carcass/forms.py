@@ -45,3 +45,10 @@ class PermissionForm(FlaskForm):
     name = StringField('Название доступа', validators=[DataRequired()])
     description = StringField('Описание доступа')
     submit = SubmitField('Добавить')
+
+
+class ManagerCreatForm(FlaskForm):
+    username = StringField('Логин', validators=[DataRequired(), Length(min=2, max=16)])
+    psw = PasswordField('Пароль', validators=[DataRequired()])
+    role = SelectField('Рол', validators=[DataRequired()])
+    submit = SubmitField('Добавить')

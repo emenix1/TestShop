@@ -7,7 +7,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from carcass import app, db
 from carcass.config import Item, User, Category, Permission, Role
-from carcass.forms import LoginForm, RegisterForm, AddGDSForm, CategoryForm, RoleForm, PermissionForm
+from carcass.forms import LoginForm, RegisterForm, AddGDSForm, CategoryForm, RoleForm, PermissionForm, ManagerCreatForm
 
 
 def requires_permission(permission_name):
@@ -34,8 +34,10 @@ def admin_actions():
 
 @app.route("/")
 def index():
-    flag=False
-    if any((perm in ('edit_content', 'manage_users', 'manage_permissions', 'manage_roles') for perm in current_user.role.permissions)):
+    flag = False
+    if current_user.is_authenticated and any(
+            perm.name in ('edit_content', 'manage_users', 'manage_permissions', 'manage_roles') for perm in
+            current_user.role.permissions):
         flag=True
     items = Item.query.all()
     categories = Category.query.all()
@@ -45,14 +47,16 @@ def index():
 @app.route('/category/<int:cat>')
 def sort_by_cat(cat):
     print(cat)
-    items = Item.query.filter_by(id=cat).all()
+    flag = False
+    if current_user.is_authenticated and any(
+            perm.name in ('edit_content', 'manage_users', 'manage_permissions', 'manage_roles') for perm in
+            current_user.role.permissions):
+        flag = True
+    items = Item.query.filter_by(category_id=cat).all()
+    for i in items:
+        print(i.title, i.id)
     categories = Category.query.all()
-    return render_template("index.html", data=items, categories=categories)
-
-
-@app.route('/category/<int:id>')
-def sort_by_category(id):
-    item = Item.query.filter_by(id).all()
+    return render_template("index.html", data=items, categories=categories, flag=flag)
 
 
 @app.route("/about")
@@ -91,6 +95,7 @@ def create():
 @app.route("/login", methods=['GET', 'POST'])
 def process_login():
     if current_user.is_authenticated:
+        flash(f'Вы уже авторизованы как "{current_user.username}"')
         return redirect('/')
     form = LoginForm()
     if form.validate_on_submit():
@@ -110,6 +115,7 @@ def process_login():
 def logout():
     logout_user()
     session.clear()
+    flash('Деавторизован')
     return redirect(url_for('index'))
 
 
@@ -179,9 +185,6 @@ def show_basket():
 @app.route('/basket/<title>', methods=['GET'])
 @login_required
 def add_to_basket(title):
-    # for i in session.get('basket'):
-    # if title == i[0]:
-    # i[2] += 1
     item = Item.query.filter_by(title=title).first()
     basket = session.setdefault('basket', [])
     basket.append((item.title, item.price))
@@ -298,6 +301,43 @@ def permission_actions():
             Permission.create(form.name.data, form.description.data)
         return redirect(url_for('role_actions'))
     return render_template('permission.html', form=form, permissions=permissions)
+
+
+@app.route('/managers/delete/<int:id>')
+@requires_permission('manage_roles')
+def delete_role(id):
+    manager = User.query.get_or_404(id)
+    try:
+        db.session.delete(manager)
+        db.session.commit()
+    except Exception as e:
+        flash(f"Что-то пошло не так: {str(e)}")
+    return redirect(url_for('role_actions'))
+
+@app.route('/managers')
+@requires_permission('manage_users')
+def manager_control():
+    managers = User.query.filter(User.role_id != 3).all()
+    form = ManagerCreatForm()
+    roles = Role.query.all()
+    form.role.choices = [(r.id, r.name) for r in roles]
+    if form.validate_on_submit():
+        role = Role.query.get_or_404(form.role.data)
+        hash_psw = generate_password_hash(form.psw.data)
+        new_user = User(
+            username=form.username.data,
+            password=hash_psw,
+            role=role
+        )
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            return redirect(url_for('manager_control'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f"""Ошибка регистрации менеджера.  {str(e)}""")
+    return render_template('managers.html', form=form, managers=managers)
 
 
 @app.errorhandler(404)

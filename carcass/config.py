@@ -72,6 +72,7 @@ class Role(db.Model):
             db.session.rollback()
             return f"Ошибка при изменение разрешения: {str(e)}"
 
+
 class User(db.Model, UserMixin):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
@@ -79,8 +80,6 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(32), nullable=False)
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'))
     role = db.relationship('Role', backref='users')
-
-
 
 
 class Permission(db.Model):
