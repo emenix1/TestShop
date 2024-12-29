@@ -9,7 +9,7 @@
 <div class="container">
     <h1>Добавление товара</h1>
     <br>
-        <form class="form-control"  method="post">
+        <form class="form-control-lg"  method="post">
        {{ form.hidden_tag() }}
         {% for field in form if field.name not in ['csrf_token', 'submit'] %}
             {{ field.label() }}

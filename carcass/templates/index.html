@@ -4,10 +4,29 @@
 {% block title %}
 <title>Онлайн магазин</title>
 {% endblock %}
+
 {% block body%}
-    <div class="pricing-header p-3 pb-md-4 mx-auto text-center">
-      <h1 class="display-4 fw-normal">Список товаров</h1>
-      <p class="fs-5 text-body-secondary">ТЕСТ</p>
+{% if flag %}
+<a href="/cat_update/{{ cat.id }}" class="btn btn-primary">Изменить</a>
+{% else %}
+ false
+{% endif %}
+<div class="dropdown">
+  <div class="btn btn-secondary dropdown-toggle" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+    Категории
+  </div>
+
+
+  <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+       <li><a class="dropdown-item" href="/">Все товары</a></li>
+      {% for cat in categories %}
+          <li><a class="dropdown-item" href="/category/{{ cat.id }}">{{cat.name}}</a></li>
+      {% endfor %}
+
+  </ul>
+</div>
+    <div class="text-center">
+      <h6>Список товаров</h6>
     </div>
 
     <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
@@ -21,7 +40,7 @@
               <h1 class="card-title pricing-card-title">{{ el.price }}<small class="text-body-secondary fw-light"> $</small></h1>
               <ul class="list-unstyled mt-3 mb-4">
                 <li>ID товара: {{ el.id }}</li>
-                <li> Статус: {{ 'Есть в наличие' if el.quantity>0 else 'Отсутствует' }}</li>
+
               </ul>
             <a href="/buy/{{ el.id }}" class="w-100 btn btn-lg btn-outline-primary">Купить</a>
               <a href="/basket/{{ el.title }}" class="w-100 btn btn-lg btn-outline-primary">Добавить в корзину</a>

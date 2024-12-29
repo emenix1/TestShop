@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}
+<title>Admin page</title>
+{% endblock %}
+{% block body%}
+<nav class="d-inline-flex mt-2 mt-md-0 ms-md-auto">
+      <a class="btn btn-outline-primary me-3 py-2 link-body-emphasis" href="/create_gds">Добавить товар</a>
+      <a class="btn btn-outline-primary me-3 py-2 link-body-emphasis" href="/categories">Категории</a>
+      <a class="btn btn-outline-primary me-3 py-2 link-body-emphasis" href="/roles">Ролы</a>
+      <a class="btn btn-outline-primary me-3 py-2 link-body-emphasis" href="/permissions">Доступы</a>
+</nav>
+{% endblock %}

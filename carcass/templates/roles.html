@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+
+{% block title %}
+    <title>Category</title>
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <h5>Add category</h5>
+        <form class="form-control-sm" method="POST" action="/roles">
+            {{ form.hidden_tag() }}
+            {% for field in form if field.name not in ['csrf_token', 'submit'] %}
+                {{ field.label() }}
+                {% if field.errors %}
+                    {{ field(class='invalid') }}
+                    <span class="alert-danger">
+                {% for e in field.errors %}
+                    {{ e }}
+                {% endfor %}
+            </span>
+                {% else %}
+                    {{ field }}
+                {% endif %}
+                <br><br>
+            {% endfor %}
+            <p>{{ form.submit(class='btn btn-outline-success') }}</p>
+        </form>
+    </div>
+    <br>
+    <br>
+     {% if roles %}
+        <table class="table">
+              <thead>
+                  <tr>
+                      <th>Название</th>
+                      <th>ID</th>
+                      <th>Описание роли</th>
+                  </tr>
+              </thead>
+            {% for role in roles %}
+              <tbody>
+              <tr>
+                  <td>{{ role.name }}</td>
+                  <td>{{ role.id }}</td>
+                  <td>{{ role.description }}</td>
+                  <td><a href="/roles/delete/{{ role.id }}" class="btn btn-secondary">Удалить</a> </td>
+              </tr>
+            </tbody>
+            {% endfor %}
+            {% else %}
+            <h3>Пока нет ролей</h3>
+        {% endif %}
+        </table>
+    </div>
+{% endblock %}

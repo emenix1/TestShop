@@ -1,17 +1,58 @@
+from functools import wraps
+
 from cloudipsp import Api, Checkout
 from flask import request, render_template, redirect, flash, session, url_for
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from carcass import app, db
-from carcass.config import Item, User
-from carcass.forms import LoginForm, RegisterForm, AddGDSForm
+from carcass.config import Item, User, Category, Permission, Role
+from carcass.forms import LoginForm, RegisterForm, AddGDSForm, CategoryForm, RoleForm, PermissionForm
+
+
+def requires_permission(permission_name):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                flash('Авторизуйтесь для доступа к закрытым страницам')
+                return redirect(url_for('process_login'))
+            if current_user.role is None or not any(perm.name == permission_name for perm in current_user.role.permissions):
+                    flash("Доступ ограничен")
+                    return redirect(url_for('index'))
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+
+@app.route('/admin')
+@requires_permission('edit_content')
+def admin_actions():
+    return render_template('admin.html')
+
 
 
 @app.route("/")
 def index():
-    items = Item.query.order_by(Item.price).all()
-    return render_template("index.html", data=items)
+    flag=False
+    if any((perm in ('edit_content', 'manage_users', 'manage_permissions', 'manage_roles') for perm in current_user.role.permissions)):
+        flag=True
+    items = Item.query.all()
+    categories = Category.query.all()
+    return render_template("index.html", data=items, categories=categories,flag=flag)
+
+
+@app.route('/category/<int:cat>')
+def sort_by_cat(cat):
+    print(cat)
+    items = Item.query.filter_by(id=cat).all()
+    categories = Category.query.all()
+    return render_template("index.html", data=items, categories=categories)
+
+
+@app.route('/category/<int:id>')
+def sort_by_category(id):
+    item = Item.query.filter_by(id).all()
 
 
 @app.route("/about")
@@ -21,25 +62,28 @@ def about():
                            data=users)
 
 
-@app.route("/create", methods=['POST', 'GET'])
+@app.route("/create_gds", methods=['POST', 'GET'])
 @login_required
+@requires_permission('edit_content')
 def create():
     form = AddGDSForm()
+    form.category.choices =['Выберите категорию'] + [(c.id, c.name) for c in Category.query.all()]
     if form.validate_on_submit():
+        category_id = 0 if form.category.data == 'Выберите категорию' else int(form.category.data[1])
         item = Item(
             title=form.title.data,
             price=form.price.data,
-            quantity=form.qty.data)
+            description=form.description.data,
+            category_id=category_id)
         try:
             db.session.add(item)
             db.session.commit()
             flash('Товар успешно добавлен')
             return redirect(url_for('create'))
-        except:
+        except Exception as e:
             db.session.rollback()
-            flash("Что-то пошло не так")
+            flash(f"Ошибка при добавлении товара: {str(e)}")
             return redirect(url_for('create'))
-
     else:
         return render_template("create_gds.html", form=form)
 
@@ -50,9 +94,8 @@ def process_login():
         return redirect('/')
     form = LoginForm()
     if form.validate_on_submit():
-        email = form.email.data
         password = form.psw.data
-        user = User.query.filter_by(email=email).first()
+        user = User.query.filter_by(username=form.username.data).first()
         if user and check_password_hash(user.password, password):
             rm = form.remember.data
             login_user(user, remember=rm)
@@ -66,6 +109,7 @@ def process_login():
 @login_required
 def logout():
     logout_user()
+    session.clear()
     return redirect(url_for('index'))
 
 
@@ -73,16 +117,20 @@ def logout():
 def process_register():
     form = RegisterForm()
     if form.validate_on_submit():
+        role_user = Role.query.filter_by(name='user').first()
         hash_psw = generate_password_hash(form.psw.data)
-        new_user = User(username=form.name.data, email=form.email.data, password=hash_psw)
+        new_user = User(username=form.username.data,
+                        password=hash_psw,
+                        role=role_user)
         try:
             db.session.add(new_user)
             db.session.commit()
             return redirect(url_for('process_login'))
-        except:
+
+        except Exception as e:
             db.session.rollback()
-            flash('Ошибка регистрации пользователя.\n'
-                  'Попробуйте ввести другой логин')
+            flash(f"""Ошибка регистрации пользователя.\n
+                  Попробуйте ввести другой логин:  {str(e)}""")
             return redirect(url_for('process_register'))
     return render_template("register.html", form=form)
 
@@ -135,15 +183,12 @@ def add_to_basket(title):
     # if title == i[0]:
     # i[2] += 1
     item = Item.query.filter_by(title=title).first()
-    if item.quantity < 0:
-        flash('К сожалению, данный товар временно отсутствует')
-    else:
-        basket = session.setdefault('basket', [])
-        basket.append((item.title, item.price))
+    basket = session.setdefault('basket', [])
+    basket.append((item.title, item.price))
 
-        if not session.modified:
-            session.modified = True
-            flash('Товар успешно добавлен в корзину')
+    if not session.modified:
+        session.modified = True
+        flash('Товар успешно добавлен в корзину')
     return redirect(url_for('index'))
 
 
@@ -162,6 +207,100 @@ def delete_from_basket(title):
     return redirect(url_for('index'))
 
 
+
+@app.route('/categories', methods=['GET', 'POST'])
+@requires_permission('edit_content')
+def show_categories():
+    form = CategoryForm()
+    categories = Category.query.all()
+    form.parent_id.choices =['Выберите категорию'] + [(c.id, c.name) for c in categories]
+    if form.validate_on_submit():
+        parent_id = 0 if form.parent_id.data == 'Выберите категорию' else int(form.parent_id.data[1])
+        new_category = Category(name=form.name.data,
+                                parent_id=parent_id)
+        try:
+            db.session.add(new_category)
+            db.session.commit()
+            flash('Катеория успешно добавлено')
+            return redirect(url_for('show_categories'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error:  {str(e)}")
+            return redirect(url_for('show_categories'))
+    return render_template('categories.html', form=form, categories=categories)
+
+
+
+@app.route('/delete_category/<int:id>')
+@requires_permission('edit_content')
+def del_category(id):
+    category = Category.query.get_or_404(id)
+    try:
+        db.session.delete(category)
+        db.session.commit()
+    except Exception as e:
+        flash(f"Что-то пошло не так: {str(e)}")
+    return redirect(url_for('show_categories'))
+
+
+@app.route('/update_category/<int:id>')
+@requires_permission('edit_content')
+def update_category(id):
+    form = CategoryForm()
+    categories = Category.query.all()
+    form.parent_id.choices = ['Выберите категорию'] + [(c.id, c.name) for c in categories]
+    category = Category.query.get(id)
+    if form.validate_on_submit():
+        parent_id = 0 if form.parent_id.data == 'Выберите категорию' else int(form.parent_id.data[1])
+        category.name = form.name.data
+        category.parent_id = parent_id
+        db.session.commit()
+        return redirect('/categories')
+    return render_template('edit_category.html', categories=categories)
+
+
+
+@app.route('/roles', methods=['POST', 'GET'])
+@requires_permission('manage_roles')
+def role_actions():
+    form = RoleForm()
+    roles = Role.query.all()
+    permissions = Permission.query.all()
+    form.permissions.choices = [(p.name, p.description) for p in permissions]
+    if form.validate_on_submit():
+        permissions = 0 if form.permissions.data == 'Выберите категорию' else [perm for perm in form.permissions.data]
+        Role.create(form.name.data, form.description.data)
+        role = Role.query.filter_by(name=form.name.data).first()
+        role.add_permissions(permissions)
+        return redirect(url_for('role_actions'))
+    return render_template('roles.html', form=form, roles=roles)
+
+
+@app.route('/roles/delete/<int:id>')
+@requires_permission('manage_roles')
+def delete_role(id):
+    role = Role.query.get_or_404(id)
+    try:
+        db.session.delete(role)
+        db.session.commit()
+    except Exception as e:
+        flash(f"Что-то пошло не так: {str(e)}")
+    return redirect(url_for('role_actions'))
+
+
+@app.route('/permissions', methods=['POST', 'GET'])
+@requires_permission('manage_permissions')
+def permission_actions():
+    form = PermissionForm()
+    permissions = Permission.query.all()
+    if form.validate_on_submit():
+        if not Permission.query.get(form.name.data):
+            Permission.create(form.name.data, form.description.data)
+        return redirect(url_for('role_actions'))
+    return render_template('permission.html', form=form, permissions=permissions)
+
+
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template("error404.html", title='Страница не найдено'), 404
+

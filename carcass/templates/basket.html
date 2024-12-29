@@ -7,7 +7,6 @@
 {% block body%}
     <div class="pricing-header p-3 pb-md-4 mx-auto text-center">
       <h1 class="display-4 fw-normal">Корзина</h1>
-      <p class="fs-5 text-body-secondary">что-то ещё</p>
     </div>
     <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
         {% if data %}
@@ -16,9 +15,6 @@
                   <tr>
                       <th>Название</th>
                       <th>Цена за ед.</th>
-                      <th>Количество </th>
-                      <th> Всего </th>
-                      <
                   </tr>
               </thead>
             {% for title, price in data %}
