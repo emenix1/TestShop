@@ -46,15 +46,12 @@ def index():
 
 @app.route('/category/<int:cat>')
 def sort_by_cat(cat):
-    print(cat)
     flag = False
     if current_user.is_authenticated and any(
             perm.name in ('edit_content', 'manage_users', 'manage_permissions', 'manage_roles') for perm in
             current_user.role.permissions):
         flag = True
     items = Item.query.filter_by(category_id=cat).all()
-    for i in items:
-        print(i.title, i.id)
     categories = Category.query.all()
     return render_template("index.html", data=items, categories=categories, flag=flag)
 
@@ -305,16 +302,16 @@ def permission_actions():
 
 @app.route('/managers/delete/<int:id>')
 @requires_permission('manage_roles')
-def delete_role(id):
+def delete_manager(id):
     manager = User.query.get_or_404(id)
     try:
         db.session.delete(manager)
         db.session.commit()
     except Exception as e:
         flash(f"Что-то пошло не так: {str(e)}")
-    return redirect(url_for('role_actions'))
+    return redirect(url_for('manager_control'))
 
-@app.route('/managers')
+@app.route('/managers', methods=['POST', 'GET'])
 @requires_permission('manage_users')
 def manager_control():
     managers = User.query.filter(User.role_id != 3).all()
