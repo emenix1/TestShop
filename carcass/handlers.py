@@ -112,7 +112,6 @@ def process_login():
 def logout():
     logout_user()
     session.clear()
-    flash('Деавторизован')
     return redirect(url_for('index'))
 
 

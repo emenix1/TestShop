@@ -7,28 +7,34 @@
 
 {% block body %}
     <div class="container">
-        <h5>Add category</h5>
+        <h3 class="text-center">Add category</h3>
         <form class="form-control-sm" method="POST" action="/categories">
             {{ form.hidden_tag() }}
-            {% for field in form if field.name not in ['csrf_token', 'submit'] %}
-                {{ field.label() }}
-                {% if field.errors %}
-                    {{ field(class='invalid') }}
-                    <span class="alert-danger">
-                {% for e in field.errors %}
-                    {{ e }}
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                {% for field in form if field.name not in ['csrf_token', 'submit'] %}
+                    <div class="mb-1">
+                        {{ field.label(class="form-label") }}
+                        {% if field.errors %}
+                            {{ field(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for e in field.errors %}
+                                    {{ e }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ field(class="form-control") }}
+                        {% endif %}
+                    </div>
                 {% endfor %}
-            </span>
-                {% else %}
-                    {{ field }}
-                {% endif %}
-                <br><br>
-            {% endfor %}
-            <p>{{ form.submit(class='btn btn-outline-success') }}</p>
-        </form>
+                <div class="mt-3">
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </div>
+            </div>
+        </div>
+    </form>
     </div>
-    <br>
-    <br>
+    <br><br><br><br><br>
      {% if categories %}
         <table class="table">
               <thead>
